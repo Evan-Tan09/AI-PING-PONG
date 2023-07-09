@@ -24,6 +24,11 @@ var rightWristX = '';
 var rightWristY = '';
 var rightWristConfidence = '';
 
+function preload(){
+  ball_touch_padel=loadSound("ball_touch_paddel.wav");
+  missed_padel=loadSound("missed.wav");
+}
+
 function setup() {
   game_status = "";
   canvas = createCanvas(700, 800);
@@ -31,7 +36,7 @@ function setup() {
   video = createCapture(VIDEO);
   video.size(700, 400);
   video.hide();
-  image(video, 0, 400, 700, 400);
+  image(video, 0, 800, 700, 400);
   poseNet = ml5.poseNet(video, modelLoaded());
   poseNet.on('pose', gotPoses);
 }
@@ -39,7 +44,9 @@ function setup() {
 function gotPoses(results) {
   if (length.results > 0) {
     rightWristX = results[0].pose.rightWrist.x;
+    console.log("rightWristX=" + rightWristX);
     rightWristY = results[0].pose.rightWrist.y;
+    console.log("rightWristY=" + rightWristY);
     rightWristConfidence = results[0].pose.rightWrist.confidence;
   }
 }
@@ -83,7 +90,7 @@ function draw() {
     fill(250, 0, 0);
     stroke(0, 0, 250);
     strokeWeight(0.5);
-    paddle1Y = mouseY;
+    paddle1Y = rightWristY;
     rect(paddle1X, paddle1Y, paddle1, paddle1Height, 100);
 
 
@@ -162,11 +169,13 @@ function move() {
     if (ball.y >= paddle1Y && ball.y <= paddle1Y + paddle1Height) {
       ball.dx = -ball.dx + 0.5;
       playerscore++;
+      ball_touch_padel.play();
     }
     else {
       pcscore++;
       reset();
       navigator.vibrate(100);
+      missed_padel.play();
     }
   }
   if (pcscore == 4) {
@@ -177,7 +186,7 @@ function move() {
     stroke("white");
     textSize(25)
     text("Game Over!☹☹", width / 2, height / 2);
-    text("Reload The Page!", width / 2, height / 2 + 30)
+    text("Press Restart button to play again!", width / 2, height / 2 + 30)
     noLoop();
     pcscore = 0;
   }
@@ -206,4 +215,10 @@ function paddleInCanvas() {
   if (mouseY < 0) {
     mouseY = 0;
   }
+}
+
+function restart(){
+  pcscore = 0;
+  playerscore=0;
+  loop();
 }
