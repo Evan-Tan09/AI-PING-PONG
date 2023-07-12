@@ -10,7 +10,7 @@ var score1 = 0, score2 = 0;
 var paddle1Y;
 
 var playerscore = 0;
-var audio1;
+
 var pcscore = 0;
 //ball x and y and speedx speed y and radius
 var ball = {
@@ -20,60 +20,54 @@ var ball = {
   dx: 3,
   dy: 3
 }
-var rightWristX = '';
-var rightWristY = '';
-var rightWristConfidence = '';
 
-function preload(){
-  ball_touch_padel=loadSound("ball_touch_paddel.wav");
-  missed_padel=loadSound("missed.wav");
+rightWristY = 0;
+rightWristX = 0;
+scoreRightWrist = 0;
+
+game_status = "";
+
+function preload() {
+  ball_touch_paddel = loadSound("ball_touch_paddel.wav");
+  missed = loadSound("missed.wav");
 }
 
 function setup() {
-  game_status = "";
-  canvas = createCanvas(700, 800);
-  canvas.parent("canvas");
+  var canvas = createCanvas(700, 600);
+  canvas.parent('canvas');
+
   video = createCapture(VIDEO);
-  video.size(700, 400);
+  video.size(700, 600);
   video.hide();
-  image(video, 0, 800, 700, 400);
-  poseNet = ml5.poseNet(video, modelLoaded());
+
+  poseNet = ml5.poseNet(video, modelLoaded);
   poseNet.on('pose', gotPoses);
 }
 
+function modelLoaded() {
+  console.log('PoseNet Is Initialized');
+}
+
 function gotPoses(results) {
-  if (length.results > 0) {
+  if (results.length > 0) {
     rightWristX = results[0].pose.rightWrist.x;
-    console.log("rightWristX=" + rightWristX);
+    console.log(rightWristX);
     rightWristY = results[0].pose.rightWrist.y;
-    console.log("rightWristY=" + rightWristY);
-    rightWristConfidence = results[0].pose.rightWrist.confidence;
+    console.log(rightWristY);
+    scoreRightWrist = results[0].pose.keypoints[10].score;
+    console.log(scoreRightWrist);
   }
 }
 
-function modelLoaded() {
-  console.log("Model is loaded");
-}
-
-
-
-
-
-
-
-
-
-
-
 function startGame() {
   game_status = "start";
-  document.getElementById("status").innerHTML = "Game is Loaded";
+  document.getElementById("status").innerHTML = "Game Is Loaded";
 }
 
 function draw() {
   if (game_status == "start") {
-    image(video, 0, 401, 700, 400);
     background(0);
+    image(video, 0, 0, 700, 600);
 
     fill("black");
     stroke("black");
@@ -82,6 +76,13 @@ function draw() {
     fill("black");
     stroke("black");
     rect(0, 0, 20, 700);
+
+    if (scoreRightWrist > 0.2) {
+      fill("red");
+      stroke("red");
+      circle(rightWristX, rightWristY, 30);
+    }
+
 
     //funtion paddleInCanvas call 
     paddleInCanvas();
@@ -110,12 +111,9 @@ function draw() {
 
     //function move call which in very important
     move();
-    if (rightWristConfidence > 0.2) {
-      fill(200, 200, 200);
-      stroke(100, 200, 200);
-      circle(rightWristX, rightWristY, 10);
-    }
+
   }
+
 }
 
 
@@ -123,10 +121,9 @@ function draw() {
 //function reset when ball does notcame in the contact of padde
 function reset() {
   ball.x = width / 2 + 100,
-    ball.y = height / 2 + 100;
+  ball.y = height / 2 + 100;
   ball.dx = 3;
   ball.dy = 3;
-
 }
 
 
@@ -168,14 +165,14 @@ function move() {
   if (ball.x - 2.5 * ball.r / 2 < 0) {
     if (ball.y >= paddle1Y && ball.y <= paddle1Y + paddle1Height) {
       ball.dx = -ball.dx + 0.5;
+      ball_touch_paddel.play();
       playerscore++;
-      ball_touch_padel.play();
     }
     else {
       pcscore++;
+      missed.play();
       reset();
       navigator.vibrate(100);
-      missed_padel.play();
     }
   }
   if (pcscore == 4) {
@@ -184,8 +181,8 @@ function move() {
     rect(0, 0, width, height - 1);
     fill("white");
     stroke("white");
-    textSize(25)
-    text("Game Over!☹☹", width / 2, height / 2);
+    textSize(25);
+    text("Game Over!", width / 2, height / 2);
     text("Press Restart button to play again!", width / 2, height / 2 + 30)
     noLoop();
     pcscore = 0;
@@ -215,10 +212,12 @@ function paddleInCanvas() {
   if (mouseY < 0) {
     mouseY = 0;
   }
+
+
 }
 
-function restart(){
-  pcscore = 0;
-  playerscore=0;
+function restart() {
   loop();
+  pcscore = 0;
+  playerscore = 0;
 }
